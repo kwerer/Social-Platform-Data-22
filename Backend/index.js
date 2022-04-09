@@ -2,6 +2,8 @@ import { Builder, By, until } from "selenium-webdriver";
 import csv from "csvtojson";
 import axiosInstance from "./axiosInstance.js";
 import { v4 as uuidv4 } from "uuid";
+import convertToDate from "./commonFunctions/convertToDate.js";
+import delay from "./commonFunctions/delayFunction.js";
 
 let fypList = [];
 let totalPostsData = [];
@@ -14,14 +16,12 @@ async function getCookies(filename) {
   }
   return fypList;
 }
-
+const webUrl = "https://www.tiktok.com/search?q=ukraine&t=1649481109188";
 // unable to locate element of tiktok video
-async function getPostData() {
+async function getPostData(webUrl) {
   let driver = await new Builder().forBrowser("chrome").build();
   // go to search option
-  await driver.get(
-    "https://www.tiktok.com/search?q=lailok&t=1648658017211"
-  );
+  await driver.get(webUrl);
 
   // get the cookies for the indiv website
   const cookies = await getCookies("indivPostCookies.csv");
@@ -32,31 +32,19 @@ async function getPostData() {
 
   // refresh browser
   await driver.navigate().refresh();
-  // wait for the browser to refresh
-  await driver.manage().setTimeouts({ implicit: 5000 });
 
   // click post data
-  /*
-   *
-   * @params:
-   *  xPathPost: get the xpath of the post
-   *
-   *
-   *
-   *
-   */
-
   async function getIndivData() {
     for (let i = 1; i < 9; i++) {
       // declare new identifier for each new post
       let uniqueId = uuidv4();
-      console.log(i + "11111");
+      console.log(i + "th iteration of individual post");
 
       let postThumbnail = await driver.wait(
         until.elementLocated(
           By.xpath(
             `//*[@id="app"]/div[2]/div[2]/div[2]/div[1]/div/div[${
-              i + 2
+              i + 1
             }]/div[1]/div/div/a`
           ),
           5000
@@ -67,7 +55,9 @@ async function getPostData() {
         postThumbnail
       );
       await postThumbnail.click();
+      console.log("after clicking video");
       await driver.manage().setTimeouts({ implicit: 7000 });
+      console.log("7 seconds is up");
       // check if there are comments available
       let numOfComments = await driver.wait(
         until.elementLocated(
@@ -96,7 +86,7 @@ async function getPostData() {
         )
       );
       let postUserLikesNumber = await postUserLikes.getText();
-
+      // get user post content
       let postUserContent = await driver.wait(
         until.elementLocated(
           By.xpath(
@@ -104,6 +94,7 @@ async function getPostData() {
           )
         )
       );
+
       let postUserContentText = await postUserContent.getText();
 
       let postUserDate = await driver.wait(
@@ -113,41 +104,9 @@ async function getPostData() {
           )
         )
       );
+
       let postUserDateText = await postUserDate.getText();
 
-      function convertToDate(postDate) {
-        // for creator comments
-        let creatorSplitTime = postDate.split("-");
-        let splitTime = postDate.split(" ");
-        let splatTime = splitTime[0].split("");
-        // time units
-        let timeUnit = splatTime[splatTime.length - 1];
-        // get the number for time
-        let timeNumber = splitTime[0].substring(0, splitTime.length - 1);
-        // calculate the time stamp in seconds
-        let timeAfterUploadInSeconds;
-        const d = new Date();
-        let currentSeconds = d.getTime();
-
-        if (timeUnit == "h") {
-          timeAfterUploadInSeconds = timeNumber * 3600;
-        } else if (timeUnit == "d") {
-          timeAfterUploadInSeconds = timeNumber * 86400;
-        } else if (timeUnit == "m") {
-          timeAfterUploadInSeconds = timeNumber * 60;
-        } else if (creatorSplitTime.length == 2) {
-          return new Date(
-            `${creatorSplitTime[0]}-${creatorSplitTime[1]}-${d.getFullYear}`
-          );
-        } else {
-          return new Date(postDate).toLocaleString();
-        }
-
-        let uploadTime = currentSeconds - timeAfterUploadInSeconds;
-        let uploadTimeFormatted = new Date(uploadTime);
-
-        return uploadTimeFormatted.toLocaleString(); // return date
-      }
       const getIndivPostData = [];
       const postUserDataObject = {
         uniqueId: uniqueId,
@@ -215,7 +174,7 @@ async function getPostData() {
           // create obj to add details of comments
           const commentObj = {
             uniqueId: uniqueId,
-            time: userCommentsTimeText,
+            time: convertToDate(userCommentsTimeText),
             user: userCommentsNameText,
             content: userCommentsContentText,
             replies: [],
@@ -318,6 +277,7 @@ async function getPostData() {
                     `//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[3]/div[1]/div[2]/div[${k}]/div[1]/p[2]/span[1]`
                   )
                 );
+                console.log(userCommentRepliesTime, "timeeee");
 
                 let userCommentRepliesTimeText =
                   await userCommentRepliesTime.getText();
@@ -367,13 +327,24 @@ async function getPostData() {
         .catch(function (err) {
           console.log(err);
         });
-      await postBackButton.click();
+      // wait
+      console.log(postBackButton, "here is the back button");
+      if (postBackButton != null) {
+        try {
+          await postBackButton.click();
+        } catch (e) {
+          console.log(e, "error here");
+        }
+      } else {
+        await driver.manage().setTimeouts({ implicit: 2000 });
+        await postBackButton.click();
+      }
     } // end of i loop
   }
   getIndivData();
 }
 // fyp data only able to get the first 8 elements for fyp post as 9th onwards need to load
 // getFpyData();
-getPostData();
+getPostData(webUrl);
 
-export default getPostData;
+export { getPostData, webUrl };
