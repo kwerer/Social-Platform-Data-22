@@ -6,6 +6,9 @@ import getCookies from "./commonFunctions/getCookies.js";
 import getThumbnailPost from "./commonFunctions/getThumbnailPost.js";
 import getUserPostData from "./commonFunctions/getUserPostData.js";
 import getPostComments from "./commonFunctions/getPostComments.js";
+import getCreatorReplies from "./commonFunctions/getCreatorReplies.js";
+import getUserReplies from "./commonFunctions/getUserReplies.js";
+import getNextUserPost from "./commonFunctions/getNextUserPost.js";
 
 let totalPostsData = [];
 
@@ -28,7 +31,7 @@ async function getPostData(webUrl) {
 
   // click post data
   async function getIndivData() {
-    for (let i = 1; i < 9; i++) {
+    for (let i = 1; i < 13; i++) {
       // declare new identifier for each new post
       let uniqueId = uuidv4();
       console.log(i + " iteration of individual post");
@@ -56,6 +59,7 @@ async function getPostData(webUrl) {
       // call this loop if there are comments for this user post
       if (userObj.numOfCommentsNumber > 0) {
         for (let j = 1; j < userObj.numOfCommentsNumber - 1; j++) {
+          console.log(j + "jth iteration");
           // check if there are comments
           try {
             await driver.findElement(
@@ -79,118 +83,60 @@ async function getPostData(webUrl) {
             replies: [],
           };
 
-          // check if comment has replies, get the comments if needed
-          let userCommentReplyExist;
           // check if creator reply exist for each comment
-          let creatorCommentReply;
+          let creatorCommentReply = null;
+          // get replies from creator
+          try {
+            // creator replies are present without needing to click
+            // check if there is a reply from creator
+            creatorCommentReply = await driver.findElement(
+              By.xpath(
+                `//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[3]/div[${j}]/div[2]/div`
+              )
+            );
+
+            let creatorCommentRepliesObj = await getCreatorReplies(
+              driver,
+              j
+            );
+            // push creator comments into commentObj.replies array
+            commentObj.replies.push({
+              username: creatorCommentRepliesObj.creatorCommentName,
+              content: creatorCommentRepliesObj.creatorCommentReplyContent,
+              time: convertToDate(
+                creatorCommentRepliesObj.creatorCommentReplyTime
+              ),
+              creator: true,
+            });
+          } catch {
+            console.log("No Creator Replies");
+          }
+
+          // check if comment has replies, get the comments if needed
+          let userCommentReplyExist = null;
+
           try {
             userCommentReplyExist = await driver.findElement(
               By.xpath(
                 `//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[3]/div[${j}]/div[2]/div[1]/p`
               )
             );
-
             // click on the user replies to comment
             await userCommentReplyExist.click();
-          } catch {
-            userCommentReplyExist = null;
-          }
 
-          try {
-            creatorCommentReply = await driver.findElement(
-              By.xpath(
-                `//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[3]/div[${j}]/div[2]/div`
-              )
-            );
-          } catch {
-            creatorCommentReply = null;
-          }
-
-          // get creator comment details
-          if (creatorCommentReply != null) {
-            let creatorCommentReplyName = await driver.findElement(
-              By.xpath(
-                `//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[3]/div[${j}]/div[2]/div/div[1]/a/span[1]`
-              )
-            );
-
-            let creatorCommentReplyNameText =
-              await creatorCommentReplyName.getText();
-
-            let creatorCommentReplyContent = await driver.findElement(
-              By.xpath(
-                `//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[3]/div[${j}]/div[2]/div/div[1]/p[1]/span`
-              )
-            );
-            let creatorCommentReplyContentText =
-              await creatorCommentReplyContent.getText();
-
-            let creatorCommentReplyTime = await driver.findElement(
-              By.xpath(
-                `//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[3]/div[${j}]/div[2]/div/div[1]/p[2]/span[1]`
-              )
-            );
-            let creatorCommentReplyTimeText =
-              await creatorCommentReplyTime.getText();
+            // get user comment replies
+            let userCommentRepliesObj = getUserReplies(driver);
 
             commentObj.replies.push({
-              username: creatorCommentReplyNameText,
-              content: creatorCommentReplyContentText,
-              time: convertToDate(creatorCommentReplyTimeText),
-              creator: true,
+              username: userCommentRepliesObj.userCommentRepliesName,
+              content: userCommentRepliesObj.userCommentRepliesContent,
+              time: convertToDate(
+                userCommentRepliesObj.userCommentRepliesTime
+              ),
+              creator: false,
             });
-          }
-          let userCommentRepliesName;
-          if (userCommentReplyExist != null) {
-            for (let k = 1; k < 50; k++) {
-              try {
-                userCommentRepliesName = await driver.findElement(
-                  By.xpath(
-                    `//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[3]/div[1]/div[2]/div[${k}]/div[1]/a/span`
-                  )
-                );
-              } catch {
-                userCommentRepliesName = null;
-                // break for loop
-                k = 50;
-              }
-
-              if (userCommentRepliesName != null) {
-                // add j to stop it from running when max comments is reached
-                j++;
-                // get username of user who commented
-                let userCommentRepliesNameText =
-                  await userCommentRepliesName.getText();
-                // find reply content
-                let userCommentRepliesContent = await driver.findElement(
-                  By.xpath(
-                    `//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[3]/div[1]/div[2]/div[${k}]/div[1]/p[1]/span`
-                  )
-                );
-
-                let userCommentRepliesContentText =
-                  await userCommentRepliesContent.getText();
-
-                let userCommentRepliesTime = await driver.findElement(
-                  By.xpath(
-                    `//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[3]/div[1]/div[2]/div[${k}]/div[1]/p[2]/span[1]`
-                  )
-                );
-                console.log(userCommentRepliesTime, "timeeee");
-
-                let userCommentRepliesTimeText =
-                  await userCommentRepliesTime.getText();
-
-                commentObj.replies.push({
-                  username: userCommentRepliesNameText,
-                  content: userCommentRepliesContentText,
-                  time: userCommentRepliesTimeText,
-                  creator: false,
-                });
-              }
-            }
-          } else {
-            console.log("No replies to comment");
+          } catch {
+            userCommentReplyExist = null;
           }
 
           getIndivPostData.push(commentObj);
@@ -238,12 +184,14 @@ async function getPostData(webUrl) {
         await driver.manage().setTimeouts({ implicit: 2000 });
         await postBackButton.click();
       }
+
+      // click on load more post if needed
+      // getNextUserPost(driver, i);
     } // end of i loop
   }
-  getIndivData();
+  getIndivData(driver);
 }
-// fyp data only able to get the first 8 elements for fyp post as 9th onwards need to load
-// getFpyData();
+
 getPostData(webUrl);
 
 export { getPostData, webUrl };

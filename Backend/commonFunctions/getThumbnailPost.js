@@ -1,7 +1,7 @@
 import { By, until } from "selenium-webdriver";
 
-function getThumbnailPost(driver, i) {
-  let postThumbnail = driver.wait(
+async function getThumbnailPost(driver, i) {
+  let postThumbnail = await driver.wait(
     until.elementLocated(
       By.xpath(
         `//*[@id="app"]/div[2]/div[2]/div[2]/div[1]/div/div[${
@@ -12,11 +12,11 @@ function getThumbnailPost(driver, i) {
     )
   );
   console.log("here is after postThumbnail");
-  driver.executeScript(
+  await driver.executeScript(
     "arguments[0].scrollIntoView(true);",
     postThumbnail
   );
-  postThumbnail.click();
+  await postThumbnail.click();
   console.log("no problemo");
 }
 
