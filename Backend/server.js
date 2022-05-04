@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { getPostData, webUrl } from "./index.js";
+import { getPostData } from "./index.js";
 import { TiktokDataComments, TiktokDataPost } from "./config.js";
 
 const app = express();

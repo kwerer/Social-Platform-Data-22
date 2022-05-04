@@ -23,6 +23,7 @@ function convertToDate(postDate) {
       `${creatorSplitTime[0]}-${creatorSplitTime[1]}-${d.getFullYear}`
     );
   } else {
+    // return the original format
     return new Date(postDate).toLocaleString();
   }
 

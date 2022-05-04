@@ -1,23 +1,16 @@
 import { Builder, By, until } from "selenium-webdriver";
-import csv from "csvtojson";
 import axiosInstance from "./axiosInstance.js";
 import { v4 as uuidv4 } from "uuid";
 import convertToDate from "./commonFunctions/convertToDate.js";
-import delay from "./commonFunctions/delayFunction.js";
+import getCookies from "./commonFunctions/getCookies.js";
+import getThumbnailPost from "./commonFunctions/getThumbnailPost.js";
+import getUserPostData from "./commonFunctions/getUserPostData.js";
+import getPostComments from "./commonFunctions/getPostComments.js";
 
-let fypList = [];
 let totalPostsData = [];
 
-// function to get cookie data
-async function getCookies(filename) {
-  const cookies = await csv().fromFile(filename);
-  for (const cookie of cookies) {
-    fypList.push(cookie);
-  }
-  return fypList;
-}
 const webUrl = "https://www.tiktok.com/search?q=ukraine&t=1649481109188";
-// unable to locate element of tiktok video
+
 async function getPostData(webUrl) {
   let driver = await new Builder().forBrowser("chrome").build();
   // go to search option
@@ -38,88 +31,32 @@ async function getPostData(webUrl) {
     for (let i = 1; i < 9; i++) {
       // declare new identifier for each new post
       let uniqueId = uuidv4();
-      console.log(i + "th iteration of individual post");
+      console.log(i + " iteration of individual post");
 
-      let postThumbnail = await driver.wait(
-        until.elementLocated(
-          By.xpath(
-            `//*[@id="app"]/div[2]/div[2]/div[2]/div[1]/div/div[${
-              i + 1
-            }]/div[1]/div/div/a`
-          ),
-          5000
-        )
-      );
-      await driver.executeScript(
-        "arguments[0].scrollIntoView(true);",
-        postThumbnail
-      );
-      await postThumbnail.click();
-      console.log("after clicking video");
-      await driver.manage().setTimeouts({ implicit: 7000 });
-      console.log("7 seconds is up");
-      // check if there are comments available
-      let numOfComments = await driver.wait(
-        until.elementLocated(
-          By.xpath(
-            '//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[2]/div[2]/div[1]/div[1]/button[2]/strong'
-          )
-        )
-      );
+      // get post thumbnail
+      getThumbnailPost(driver, i);
 
-      let numOfCommentsNumber = await numOfComments.getText();
+      // get user post data
+      let userObj = await getUserPostData(driver);
+      console.log(userObj);
 
-      let postUserName = await driver.wait(
-        until.elementLocated(
-          By.xpath(
-            '//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[1]/a[2]/span[1]'
-          )
-        )
-      );
-      let postUserNameText = await postUserName.getText();
-
-      let postUserLikes = await driver.wait(
-        until.elementLocated(
-          By.xpath(
-            '//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[2]/div[2]/div[1]/div[1]/button[1]/strong'
-          )
-        )
-      );
-      let postUserLikesNumber = await postUserLikes.getText();
-      // get user post content
-      let postUserContent = await driver.wait(
-        until.elementLocated(
-          By.xpath(
-            '//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[2]/div[1]'
-          )
-        )
-      );
-
-      let postUserContentText = await postUserContent.getText();
-
-      let postUserDate = await driver.wait(
-        until.elementLocated(
-          By.xpath(
-            '//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[1]/a[2]/span[2]/span[2]'
-          )
-        )
-      );
-
-      let postUserDateText = await postUserDate.getText();
-
+      // add user post to object
       const getIndivPostData = [];
       const postUserDataObject = {
         uniqueId: uniqueId,
-        user: postUserNameText,
-        caption: postUserContentText,
-        likes: postUserLikesNumber,
-        numComments: numOfCommentsNumber,
-        date: convertToDate(postUserDateText),
+        user: userObj.username,
+        caption: userObj.postUserContentText,
+        likes: userObj.postUserLikesNumber,
+        numComments: userObj.numOfCommentsNumber,
+        date: convertToDate(userObj.postUserDateText),
       };
+      console.log(postUserDataObject, "user data object");
       getIndivPostData.push(postUserDataObject);
 
-      if (numOfCommentsNumber != 0) {
-        for (let j = 1; j < numOfCommentsNumber - 1; j++) {
+      // call this loop if there are comments for this user post
+      if (userObj.numOfCommentsNumber > 0) {
+        for (let j = 1; j < userObj.numOfCommentsNumber - 1; j++) {
+          // check if there are comments
           try {
             await driver.findElement(
               By.xpath(
@@ -127,56 +64,18 @@ async function getPostData(webUrl) {
               )
             );
           } catch {
-            break;
+            continue;
           }
-          let userCommentsName = await driver.wait(
-            until.elementLocated(
-              By.xpath(
-                `//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[3]/div[${j}]/div[1]/div[1]/a/span`,
-                1000
-              )
-            )
-          );
 
-          let userCommentsNameText = await userCommentsName.getText();
-
-          // scroll the browser until we get the name
-          // ensures that browser driver is able to get the element located
-          await driver.executeScript(
-            "arguments[0].scrollIntoView(true);",
-            userCommentsName
-          );
-
-          let userCommentsContent = await driver.wait(
-            until.elementLocated(
-              By.xpath(
-                `//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[3]/div[${j}]/div[1]/div[1]/p[1]/span`,
-
-                1000
-              )
-            )
-          );
-          let userCommentsContentText =
-            await userCommentsContent.getText();
-
-          let userCommentsTime = await driver.wait(
-            until.elementLocated(
-              By.xpath(
-                `//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[3]/div[${j}]/div[1]/div[1]/p[2]/span[1]`,
-
-                1000
-              )
-            )
-          );
-
-          let userCommentsTimeText = await userCommentsTime.getText();
+          let userCommentsObj = await getPostComments(driver, j);
+          console.log(userCommentsObj, "user comments obj");
 
           // create obj to add details of comments
           const commentObj = {
             uniqueId: uniqueId,
-            time: convertToDate(userCommentsTimeText),
-            user: userCommentsNameText,
-            content: userCommentsContentText,
+            time: convertToDate(userCommentsObj.userCommentsTime),
+            user: userCommentsObj.userCommentsName,
+            content: userCommentsObj.userCommentsContent,
             replies: [],
           };
 
