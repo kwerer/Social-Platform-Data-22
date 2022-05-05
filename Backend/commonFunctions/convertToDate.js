@@ -5,32 +5,33 @@ function convertToDate(postDate) {
   let splatTime = splitTime[0].split("");
   // time units
   let timeUnit = splatTime[splatTime.length - 1];
-  // get the number for time
-  let timeNumber = splitTime[0].substring(0, splitTime.length - 1);
-  // calculate the time stamp in seconds
-  let timeAfterUploadInSeconds;
+  // get number of time units
+  let numUnits = splatTime.slice(0, splatTime.length - 1);
+  numUnits = numUnits.join("");
   const d = new Date();
-  let currentSeconds = d.getTime();
 
   if (timeUnit == "h") {
-    timeAfterUploadInSeconds = timeNumber * 3600;
+    d.setHours(d.getHours() - numUnits);
+    return d;
   } else if (timeUnit == "d") {
-    timeAfterUploadInSeconds = timeNumber * 86400;
+    d.setDate(d.getDate() - numUnits);
+    return d;
   } else if (timeUnit == "m") {
-    timeAfterUploadInSeconds = timeNumber * 60;
-  } else if (creatorSplitTime.length == 2) {
-    return new Date(
-      `${creatorSplitTime[0]}-${creatorSplitTime[1]}-${d.getFullYear}`
-    );
-  } else {
+    d.setMinutes(d.getMinutes() - numUnits);
+    return d;
+  }
+  // if the date is "3-8"
+  else if (creatorSplitTime.length == 2) {
+    let currentYear = d.getFullYear();
+    let newDate = `${creatorSplitTime[0]}-${creatorSplitTime[1]}-${currentYear}`;
+    return new Date(newDate);
+  }
+
+  // date is "3-8-2020"
+  else {
     // return the original format
     return new Date(postDate).toLocaleString();
   }
-
-  let uploadTime = currentSeconds - timeAfterUploadInSeconds;
-  let uploadTimeFormatted = new Date(uploadTime);
-
-  return uploadTimeFormatted.toLocaleString(); // return date
 }
 
 export default convertToDate;

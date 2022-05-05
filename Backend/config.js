@@ -16,4 +16,8 @@ const TiktokDataPost = db
   .collection("Tiktok Data")
   .doc("PostData")
   .collection("IndividualPostData");
-export { TiktokDataComments, TiktokDataPost, db };
+const TiktokDataUserAccounts = db
+  .collection("Tiktok Data")
+  .doc("UserAccounts")
+  .collection("IndividualUseraccounts");
+export { TiktokDataComments, TiktokDataPost, TiktokDataUserAccounts, db };

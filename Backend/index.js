@@ -1,5 +1,5 @@
 import { Builder, By, until } from "selenium-webdriver";
-import axiosInstance from "./axiosInstance.js";
+import axiosInstance from "./commonFunctions/axiosInstance.js";
 import { v4 as uuidv4 } from "uuid";
 import convertToDate from "./commonFunctions/convertToDate.js";
 import getCookies from "./commonFunctions/getCookies.js";
@@ -8,11 +8,13 @@ import getUserPostData from "./commonFunctions/getUserPostData.js";
 import getPostComments from "./commonFunctions/getPostComments.js";
 import getCreatorReplies from "./commonFunctions/getCreatorReplies.js";
 import getUserReplies from "./commonFunctions/getUserReplies.js";
-import getNextUserPost from "./commonFunctions/getNextUserPost.js";
+import getUserAccountDetails from "./commonFunctions/getUserAccountDetails.js";
+import pkg from "firebase-admin";
+const { firestore } = pkg;
 
 let totalPostsData = [];
 
-const webUrl = "https://www.tiktok.com/search?q=ukraine&t=1649481109188";
+const webUrl = "https://www.tiktok.com/search?q=kwerer&t=1651730983260";
 
 async function getPostData(webUrl) {
   let driver = await new Builder().forBrowser("chrome").build();
@@ -36,6 +38,7 @@ async function getPostData(webUrl) {
       let uniqueId = uuidv4();
       console.log(i + " iteration of individual post");
 
+      // <-----------get post content----------->
       // get post thumbnail
       getThumbnailPost(driver, i);
 
@@ -51,12 +54,18 @@ async function getPostData(webUrl) {
         caption: userObj.postUserContentText,
         likes: userObj.postUserLikesNumber,
         numComments: userObj.numOfCommentsNumber,
-        date: convertToDate(userObj.postUserDateText),
+        date: firestore.Timestamp.fromDate(
+          convertToDate(userObj.postUserDateText)
+        ).toDate(),
       };
       console.log(postUserDataObject, "user data object");
       getIndivPostData.push(postUserDataObject);
 
       // call this loop if there are comments for this user post
+      console.log(
+        userObj.numOfCommentsNumber,
+        "number of comments in numbers"
+      );
       if (userObj.numOfCommentsNumber > 0) {
         for (let j = 1; j < userObj.numOfCommentsNumber - 1; j++) {
           console.log(j + "jth iteration");
@@ -121,20 +130,24 @@ async function getPostData(webUrl) {
                 `//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[3]/div[${j}]/div[2]/div[1]/p`
               )
             );
-            // click on the user replies to comment
-            await userCommentReplyExist.click();
+            if (userCommentReplyExist != null) {
+              // click on the user replies to comment
+              await userCommentReplyExist.click();
 
-            // get user comment replies
-            let userCommentRepliesObj = getUserReplies(driver);
+              // get user comment replies
+              let userCommentRepliesObj = getUserReplies(driver);
 
-            commentObj.replies.push({
-              username: userCommentRepliesObj.userCommentRepliesName,
-              content: userCommentRepliesObj.userCommentRepliesContent,
-              time: convertToDate(
-                userCommentRepliesObj.userCommentRepliesTime
-              ),
-              creator: false,
-            });
+              commentObj.replies.push({
+                username: userCommentRepliesObj.userCommentRepliesName,
+                content: userCommentRepliesObj.userCommentRepliesContent,
+                time: convertToDate(
+                  userCommentRepliesObj.userCommentRepliesTime
+                ),
+                creator: false,
+              });
+            } else {
+              console.log("No User Comments");
+            }
           } catch {
             userCommentReplyExist = null;
           }
@@ -184,9 +197,10 @@ async function getPostData(webUrl) {
         await driver.manage().setTimeouts({ implicit: 2000 });
         await postBackButton.click();
       }
+      // <-----------get post content----------->
 
-      // click on load more post if needed
-      // getNextUserPost(driver, i);
+      // <-----------get user account details----------->
+      await getUserAccountDetails(driver, i);
     } // end of i loop
   }
   getIndivData(driver);
