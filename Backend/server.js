@@ -1,7 +1,11 @@
 import express from "express";
 import cors from "cors";
 import { getPostData } from "./index.js";
-import { TiktokDataComments, TiktokDataPost } from "./config.js";
+import {
+  TiktokDataComments,
+  TiktokDataPost,
+  TiktokDataUserAccounts,
+} from "./config.js";
 
 const app = express();
 app.use(express.json());
@@ -17,6 +21,12 @@ app.post("/sendTiktokDataComments", async (req, res) => {
   const data = req.body;
   await TiktokDataComments.add(data);
   res.send({ msg: "Comments Added" });
+});
+
+app.post("/sendUserAccountDetails", async (req, res) => {
+  const data = req.body;
+  await TiktokDataUserAccounts.add(data);
+  res.send({ msg: "User Accounts Added" });
 });
 
 app.listen(4001, () => {

@@ -52,10 +52,10 @@ async function getUserPostData(driver) {
 
   let userObj = {
     username: postUserNameText,
-    postUserLikesNumber: postUserLikesNumber,
+    postUserLikesNumber: parseInt(postUserLikesNumber),
     postUserDateText: postUserDateText,
     postUserContentText: postUserContentText,
-    numOfCommentsNumber: numOfCommentsNumber,
+    numOfCommentsNumber: parseInt(numOfCommentsNumber),
   };
   return userObj;
 }
