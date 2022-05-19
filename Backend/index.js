@@ -14,7 +14,8 @@ const { firestore } = pkg;
 
 let totalPostsData = [];
 
-const webUrl = "https://www.tiktok.com/search?q=kwerer&t=1651730983260";
+const webUrl =
+  "https://www.tiktok.com/search/video?q=noto&t=1652968173634";
 
 async function getPostData(webUrl) {
   let driver = await new Builder().forBrowser("chrome").build();
@@ -22,18 +23,11 @@ async function getPostData(webUrl) {
   await driver.get(webUrl);
 
   // get the cookies for the indiv website
-  const cookies = await getCookies("indivPostCookies.csv");
-  for (const i of cookies) {
-    // add cookies to web driver
-    await driver.manage().addCookie(i);
-  }
-
-  // refresh browser
-  await driver.navigate().refresh();
+  getCookies("indivPostCookies.csv", driver);
 
   // click post data
   async function getIndivData() {
-    for (let i = 1; i < 13; i++) {
+    for (let i = 1; i < 2; i++) {
       // declare new identifier for each new post
       let uniqueId = uuidv4();
       console.log(i + " iteration of individual post");
@@ -44,7 +38,7 @@ async function getPostData(webUrl) {
 
       // get user post data
       let userObj = await getUserPostData(driver);
-      console.log(userObj);
+      console.log(userObj, "userobjobj");
 
       // add user post to object
       const getIndivPostData = [];
@@ -112,11 +106,13 @@ async function getPostData(webUrl) {
             commentObj.replies.push({
               username: creatorCommentRepliesObj.creatorCommentName,
               content: creatorCommentRepliesObj.creatorCommentReplyContent,
+              likes: creatorCommentRepliesObj.creatorCommentReplyLikes,
               time: convertToDate(
                 creatorCommentRepliesObj.creatorCommentReplyTime
               ),
               creator: true,
             });
+            console.log(commentObj, "creator comment obj");
           } catch {
             console.log("No Creator Replies");
           }
@@ -127,24 +123,31 @@ async function getPostData(webUrl) {
           try {
             userCommentReplyExist = await driver.findElement(
               By.xpath(
-                `//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[3]/div[${j}]/div[2]/div[1]/p`
+                `//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[3]/div[${j}]/div[2]/div[2]/p`
               )
             );
+            console.log(userCommentReplyExist, "usercomment reply exist");
             if (userCommentReplyExist != null) {
               // click on the user replies to comment
               await userCommentReplyExist.click();
+              console.log("there is a user comment you nut");
 
               // get user comment replies
-              let userCommentRepliesObj = getUserReplies(driver);
-
+              let userCommentRepliesObj = await getUserReplies(driver, j);
+              console.log(
+                userCommentRepliesObj.userCommentRepliesLikes,
+                "likes la cb"
+              );
               commentObj.replies.push({
                 username: userCommentRepliesObj.userCommentRepliesName,
                 content: userCommentRepliesObj.userCommentRepliesContent,
+                likes: userCommentRepliesObj.userCommentRepliesLikes,
                 time: convertToDate(
                   userCommentRepliesObj.userCommentRepliesTime
                 ),
                 creator: false,
               });
+              console.log(commentObj, "comment obj");
             } else {
               console.log("No User Comments");
             }

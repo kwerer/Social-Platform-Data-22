@@ -30,7 +30,7 @@ function convertToDate(postDate) {
   // date is "3-8-2020"
   else {
     // return the original format
-    return new Date(postDate).toLocaleString();
+    return new Date(postDate);
   }
 }
 

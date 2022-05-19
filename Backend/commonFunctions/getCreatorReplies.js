@@ -26,10 +26,20 @@ async function getCreatorReplies(driver, j) {
   let creatorCommentReplyTimeText =
     await creatorCommentReplyTime.getText();
 
+  let creatorCommentReplyLikes = await driver.findElement(
+    By.xpath(
+      `//*[@id="app"]/div[2]/div[2]/div[2]/div[3]/div[2]/div[3]/div[${j}]/div[2]/div/div[2]/div[2]/span`
+    )
+  );
+
+  let creatorCommentReplyLikesText =
+    await creatorCommentReplyLikes.getText();
+
   let creatorCommentRepliesObj = {
     creatorCommentName: creatorCommentReplyNameText,
     creatorCommentReplyContent: creatorCommentReplyContentText,
     creatorCommentReplyTime: creatorCommentReplyTimeText,
+    creatorCommentReplyLikes: creatorCommentReplyLikesText,
   };
 
   return creatorCommentRepliesObj;

@@ -1,6 +1,6 @@
 import { By } from "selenium-webdriver";
 
-async function getUserReplies(driver) {
+async function getUserReplies(driver, j) {
   let userCommentRepliesName;
 
   for (let k = 1; k < 50; k++) {
@@ -41,11 +41,22 @@ async function getUserReplies(driver) {
       let userCommentRepliesTimeText =
         await userCommentRepliesTime.getText();
 
+      let userCommentRepliesLikes = await driver.findElement(
+        By.xpath(
+          `/html/body/div[2]/div[2]/div[2]/div[2]/div[3]/div[2]/div[3]/div[1]/div/div[2]/div[2]/span`
+        )
+      );
+
+      let userCommentRepliesLikesText =
+        await userCommentRepliesLikes.getText();
+
       let userCommentRepliesObj = {
         userCommentRepliesName: userCommentRepliesNameText,
         userCommentRepliesContent: userCommentRepliesContentText,
         userCommentRepliesTime: userCommentRepliesTimeText,
+        userCommentRepliesLikes: userCommentRepliesLikesText,
       };
+      console.log(userCommentRepliesObj, "replies obj");
 
       return userCommentRepliesObj;
     }

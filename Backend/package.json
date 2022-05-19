@@ -14,7 +14,7 @@
     "got": "^11.8.3",
     "json2csv": "^5.0.7",
     "metascraper": "^5.26.0",
-    "nodemon": "^2.0.15",
+    "nodemon": "^2.0.16",
     "selenium-webdriver": "^4.1.1",
     "unfurl.js": "^5.6.4",
     "unfurled": "^1.1.5",

@@ -82,6 +82,37 @@ async function getUserAccountDetails(driver, i) {
   let userAccountBioText = await userAccountBio.getText();
   console.log(userAccountBioText, "this is the text");
 
+  let userVideosArray = [];
+  for (let a = 1; a < 10000; a++) {
+    console.log("valeu of a is : ", a);
+    let userAccountVideo = await driver.wait(
+      until.elementLocated(
+        By.xpath(
+          `//*[@id="app"]/div[2]/div[2]/div/div[2]/div[2]/div/div[${a}]/div[1]/div/div/a/div/div[1]/div/video`
+        ),
+        5000
+      )
+    );
+    // need to know how to scoll this
+    await driver.executeScript(
+      "arguments[0].scrollIntoView(true);",
+      userAccountVideo
+    );
+    let userAccountVideoText = await userAccountVideo.getAttribute("src");
+    console.log(userAccountVideoText, "this is the video href");
+
+    if (userAccountVideoText != null) {
+      console.log("stuck in if");
+      userVideosArray.push(userAccountVideoText);
+      console.log("stuck in if 2");
+    } else {
+      console.log("stuck in else");
+      a = 10001;
+    }
+  }
+  //*[@id="app"]/div[2]/div[2]/div/div[2]/div[2]/div/div[1]/div[1]/div/div/a
+  //*[@id="app"]/div[2]/div[2]/div/div[2]/div[2]/div/div[2]/div[1]/div/div/a
+
   let userAccountObj = {
     userAccountName: userAccountTitleText,
     userAccountSubtitle: userAccountSubtitleText,
